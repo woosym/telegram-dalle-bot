@@ -6,7 +6,7 @@ import replicate
 
 # 🔐 ВСТАВЬ СЮДА СВОИ ТОКЕНЫ
 BOT_TOKEN = "8109093278:AAGD0KkdrnSsUiDP85_Nhho6OYibz3UkQLg"
-REPLICATE_API_TOKEN = "r8_DQwfkIKT5d22xGAch815HMpYhgJoqAN0n59QW"
+REPLICATE_API_TOKEN = "r8_EDwLsGh2o4jk0WyJfELNIxCXvLLeWnk01V45S"
 
 # 🔐 Устанавливаем токен для replicate
 os.environ["REPLICATE_API_TOKEN"] = REPLICATE_API_TOKEN
