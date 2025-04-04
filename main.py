@@ -3,8 +3,8 @@ import replicate
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN")
+TELEGRAM_TOKEN = os.getenv("8109093278:AAGD0KkdrnSsUiDP85_Nhho6OYibz3UkQLg")
+REPLICATE_TOKEN = os.getenv("r8_DQwfkIKT5d22xGAch815HMpYhgJoqAN0n59QW")
 
 os.environ["REPLICATE_API_TOKEN"] = REPLICATE_TOKEN
 
