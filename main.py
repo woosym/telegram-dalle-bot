@@ -33,13 +33,18 @@ async def generate_image(update: Update, context):
 async def main():
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
-    # Добавляем обработчики команд и сообщений
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_image))
 
-    # Запуск бота
     await application.run_polling()
 
+# Запуск бота с учетом особенностей Render
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(main())
+
+    try:
+        asyncio.get_event_loop().run_until_complete(main())
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(main())
