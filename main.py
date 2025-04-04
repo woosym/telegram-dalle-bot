@@ -5,9 +5,9 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 # Получаем токен из переменной окружения
 REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN")
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
-if not REPLICATE_TOKEN or not BOT_TOKEN:
+if not REPLICATE_TOKEN or not TELEGRAM_BOT_TOKEN:
     raise ValueError("Не заданы переменные окружения REPLICATE_API_TOKEN или TELEGRAM_BOT_TOKEN")
 
 replicate_client = replicate.Client(api_token=REPLICATE_TOKEN)
@@ -33,7 +33,7 @@ async def generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("generate", generate))
 
