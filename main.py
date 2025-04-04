@@ -5,7 +5,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 # Получаем токен из переменной окружения
 REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN")
-BOT_TOKEN = os.getenv("8109093278:AAGD0KkdrnSsUiDP85_Nhho6OYibz3UkQLg")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 if not REPLICATE_TOKEN or not BOT_TOKEN:
     raise ValueError("Не заданы переменные окружения REPLICATE_API_TOKEN или TELEGRAM_BOT_TOKEN")
