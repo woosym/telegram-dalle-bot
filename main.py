@@ -1,27 +1,23 @@
 import os
+import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from dotenv import load_dotenv
 import replicate
 
-# Загружаем переменные из .env
-load_dotenv()
+# 🔐 ВСТАВЬ СЮДА СВОИ ТОКЕНЫ
+BOT_TOKEN = "8109093278:AAGD0KkdrnSsUiDP85_Nhho6OYibz3UkQLg"
+REPLICATE_API_TOKEN = "r8_DQwfkIKT5d22xGAch815HMpYhgJoqAN0n59QW"
 
-# Получаем токены из окружения
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN")
+# 🔐 Устанавливаем токен для replicate
+os.environ["REPLICATE_API_TOKEN"] = REPLICATE_API_TOKEN
 
-# Устанавливаем токен Replicate для API
-os.environ["REPLICATE_API_TOKEN"] = REPLICATE_TOKEN
+# Логирование (по желанию)
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-# Команда /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет! Отправь команду /generate <запрос>, чтобы сгенерировать изображение.")
-
-# Команда /generate <prompt>
+# Команда /generate
 async def generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
-        await update.message.reply_text("Пожалуйста, укажи запрос. Пример: /generate cat in space")
+        await update.message.reply_text("Напиши описание изображения после команды /generate")
         return
 
     prompt = " ".join(context.args)
@@ -29,21 +25,17 @@ async def generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         output = replicate.run(
-            "stability-ai/stable-diffusion:db21e45e5b21fafd82c6c8aef6a5c7b016c31c758a534c80a3fec203d04e7c35",
+            "stability-ai/stable-diffusion:db21e45b17e7e87d6cb5d2c7aa99cf0741dcce771b95c365d8502fcd203f6f78",
             input={"prompt": prompt}
         )
-        await update.message.reply_photo(photo=output[0])
+        await update.message.reply_text(output[0])
     except Exception as e:
-        await update.message.reply_text(f"Ошибка при генерации: {e}")
+        await update.message.reply_text(f"Ошибка при генерации изображения: {e}")
 
-# Основная функция запуска бота
+# Запуск бота
 def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-
-    app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("generate", generate))
-
-    print("Бот запущен.")
     app.run_polling()
 
 if __name__ == "__main__":
