@@ -1,45 +1,43 @@
 import os
+from dotenv import load_dotenv
 import replicate
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-TELEGRAM_TOKEN = os.getenv("8109093278:AAGD0KkdrnSsUiDP85_Nhho6OYibz3UkQLg")
-REPLICATE_TOKEN = os.getenv("r8_DQwfkIKT5d22xGAch815HMpYhgJoqAN0n59QW")
+# Загружаем переменные из .env
+load_dotenv()
 
+# Получаем токены из .env
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+REPLICATE_TOKEN = os.getenv("REPLICATE_TOKEN")
+
+# Устанавливаем токен для Replicate
 os.environ["REPLICATE_API_TOKEN"] = REPLICATE_TOKEN
 
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши описание, и я сгенерирую картинку 🎨")
 
-# Обработка текста
+# Генерация изображения
 async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     prompt = update.message.text
     try:
         output = replicate.run(
-            "stability-ai/sdxl:latest",
-            input={
-                "prompt": prompt,
-                "width": 768,
-                "height": 768
-            }
+            "stability-ai/stable-diffusion:db21e45a03f5ec63dba47c3ef05c56d744e3c40c4110c8c720f3f52d4470a6f3",
+            input={"prompt": prompt}
         )
-        image_url = output[0]
-        await update.message.reply_photo(photo=image_url)
+        await update.message.reply_photo(photo=output[0])
     except Exception as e:
-        await update.message.reply_text(f"Ошибка: {e}")
+        await update.message.reply_text(f"Ошибка при генерации: {e}")
 
-# Запуск приложения (без asyncio.run)
-async def start_bot():
+# Основная функция
+async def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_image))
-    await app.initialize()
-    await app.start()
-    print("Бот запущен...")
-    await app.updater.start_polling()
-    await app.updater.idle()
+    await app.run_polling()
 
-# Хак для Render — запускаем внутри уже существующего event loop
-import asyncio
-asyncio.get_event_loop().create_task(start_bot())
+# Запуск
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
