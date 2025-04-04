@@ -1,50 +1,45 @@
 import os
-import openai
-import asyncio
+import replicate
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-# Получаем ключи из переменных окружения
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN")
 
-# Устанавливаем API ключ OpenAI
-openai.api_key = OPENAI_API_KEY
+os.environ["REPLICATE_API_TOKEN"] = REPLICATE_TOKEN
 
-# /start
-async def start(update: Update, context):
+# Команда /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Привет! Напиши описание, и я сгенерирую картинку 🎨")
 
-# Генерация изображения
-async def generate_image(update: Update, context):
+# Обработка текста
+async def generate_image(update: Update, context: ContextTypes.DEFAULT_TYPE):
     prompt = update.message.text
     try:
-        response = openai.Image.create(
-            model="dall-e-3",
-            prompt=prompt,
-            size="1024x1024",
-            n=1
+        output = replicate.run(
+            "stability-ai/sdxl:latest",
+            input={
+                "prompt": prompt,
+                "width": 768,
+                "height": 768
+            }
         )
-        image_url = response['data'][0]['url']
+        image_url = output[0]
         await update.message.reply_photo(photo=image_url)
     except Exception as e:
-        await update.message.reply_text(f"Ошибка при генерации: {e}")
+        await update.message.reply_text(f"Ошибка: {e}")
 
-# Основной запуск
-async def main():
+# Запуск приложения (без asyncio.run)
+async def start_bot():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_image))
-    await app.run_polling()
+    await app.initialize()
+    await app.start()
+    print("Бот запущен...")
+    await app.updater.start_polling()
+    await app.updater.idle()
 
-# Запуск с защитой от двойного event loop
-if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except RuntimeError as e:
-        if "already running" in str(e):
-            loop = asyncio.get_event_loop()
-            loop.create_task(main())
-            loop.run_forever()
-        else:
-            raise
+# Хак для Render — запускаем внутри уже существующего event loop
+import asyncio
+asyncio.get_event_loop().create_task(start_bot())
