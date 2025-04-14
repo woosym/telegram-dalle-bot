@@ -1,45 +1,41 @@
-import os
-import replicate
+import logging
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+import openai
 
-# Получаем токен из переменной окружения
-REPLICATE_TOKEN = os.getenv("REPLICATE_API_TOKEN")
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+# Замените на свои ключи
+TELEGRAM_TOKEN = 'your_telegram_bot_token_here'
+OPENAI_API_KEY = 'your_openai_api_key_here'
 
-if not REPLICATE_TOKEN or not TELEGRAM_BOT_TOKEN:
-    raise ValueError("Не заданы переменные окружения REPLICATE_API_TOKEN или TELEGRAM_BOT_TOKEN")
+openai.api_key = OPENAI_API_KEY
 
-replicate_client = replicate.Client(api_token=REPLICATE_TOKEN)
+# Включим логирование
+logging.basicConfig(level=logging.INFO)
 
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Привет! Я ИИ-бот 🤖. Напиши мне что-нибудь!")
 
-async def generate(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    prompt = " ".join(context.args)
-    if not prompt:
-        await update.message.reply_text("Напиши промпт после команды /generate")
-        return
+async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_message = update.message.text
+    await update.message.chat.send_action(action="typing")
 
     try:
-        await update.message.reply_text("Генерирую изображение...")
-
-        output = replicate_client.run(
-            "stability-ai/sdxl:latest",
-            input={"prompt": prompt}
+        # Отправляем запрос к OpenAI
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # или другая доступная модель
+            messages=[{"role": "user", "content": user_message}]
         )
-
-        await update.message.reply_photo(photo=output[0])
+        bot_reply = response['choices'][0]['message']['content']
+        await update.message.reply_text(bot_reply)
     except Exception as e:
-        await update.message.reply_text(f"Ошибка при генерации изображения: {e}")
+        logging.error(f"Ошибка: {e}")
+        await update.message.reply_text("Произошла ошибка при обращении к ИИ 😢")
 
+if __name__ == '__main__':
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-def main():
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
 
-    app.add_handler(CommandHandler("generate", generate))
-
-    print("Бот запущен")
+    print("Бот запущен!")
     app.run_polling()
-
-
-if __name__ == "__main__":
-    main()
