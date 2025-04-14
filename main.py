@@ -1,11 +1,14 @@
+import os
+from dotenv import load_dotenv
 import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 import openai
 
-# Замените на свои ключи
-TELEGRAM_TOKEN = 'your_telegram_bot_token_here'
-OPENAI_API_KEY = 'your_openai_api_key_here'
+load_dotenv()
+
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 openai.api_key = OPENAI_API_KEY
 
