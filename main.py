@@ -1,45 +1,44 @@
 import os
-import openai
+from dotenv import load_dotenv
+import logging
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
+import openai
 
-# Устанавливаем API-ключи через переменные окружения
-TELEGRAM_TOKEN = os.getenv("8109093278:AAGD0KkdrnSsUiDP85_Nhho6OYibz3UkQLg")
-OPENAI_API_KEY = os.getenv("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")
+load_dotenv()
 
-# Устанавливаем API-ключ OpenAI
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
 openai.api_key = OPENAI_API_KEY
 
-# Команда /start
-async def start(update: Update, context):
-    await update.message.reply_text("Привет! Напиши описание, и я сгенерирую картинку 🎨")
+# Включим логирование
+logging.basicConfig(level=logging.INFO)
 
-# Генерация изображения по сообщению
-async def generate_image(update: Update, context):
-    prompt = update.message.text
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Привет! Я ИИ-бот 🤖. Напиши мне что-нибудь!")
+
+async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_message = update.message.text
+    await update.message.chat.send_action(action="typing")
+
     try:
-        response = openai.Image.create(
-            model="dall-e-3",
-            prompt=prompt,
-            size="1024x1024",
-            n=1
+        # Отправляем запрос к OpenAI
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # или другая доступная модель
+            messages=[{"role": "user", "content": user_message}]
         )
-        image_url = response['data'][0]['url']
-        await update.message.reply_photo(photo=image_url)
+        bot_reply = response['choices'][0]['message']['content']
+        await update.message.reply_text(bot_reply)
     except Exception as e:
-        await update.message.reply_text(f"Ошибка при генерации: {e}")
+        logging.error(f"Ошибка: {e}")
+        await update.message.reply_text("Произошла ошибка при обращении к ИИ 😢")
 
-# Основная функция для запуска бота
-async def main():
-    application = Application.builder().token(TELEGRAM_TOKEN).build()
+if __name__ == '__main__':
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-    # Добавляем обработчики команд и сообщений
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, generate_image))
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, chat))
 
-    # Запуск бота
-    await application.run_polling()
-
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    print("Бот запущен!")
+    app.run_polling()
